@@ -8,8 +8,13 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom, catchError, map } from 'rxjs';
 import { AxiosError, AxiosResponse } from 'axios';
 
+// --- DTOs para los contratos de la API de ms-identidad ---
 interface PerfilUsuarioResponse {
-  gymId: string | null;
+  id: string;
+  gimnasio: {
+    id: string;
+    nombre: string;
+  } | null;
 }
 
 interface MiembroGimnasioResponse {
@@ -39,35 +44,47 @@ export class IdentidadService {
     this.identidadServiceUrl = url;
   }
 
+  /**
+   * Verifica si un atleta específico es miembro del mismo gimnasio que un entrenador.
+   *
+   * @param entrenadorId El ID del entrenador que realiza la petición.
+   * @param atletaId El ID del atleta que se quiere validar.
+   * @returns `true` si el atleta es miembro del gimnasio del entrenador, `false` en caso contrario.
+   */
   public async verificarRelacionEntrenadorAtleta(
     entrenadorId: string,
     atletaId: string,
   ): Promise<boolean> {
+    // 1. Obtener el perfil del entrenador para saber su gimnasio.
+    // Usamos el endpoint GET /users/me que ya implementamos, pero necesitaríamos uno
+    // que acepte un ID para ser llamado por otro servicio. Asumimos GET /users/{id}
     const urlPerfil = `${this.identidadServiceUrl}/v1/users/${entrenadorId}`;
+
     const perfilEntrenador$ = this.httpService
       .get<PerfilUsuarioResponse>(urlPerfil)
       .pipe(
         map((response: AxiosResponse<PerfilUsuarioResponse>) => response.data),
         catchError((error: AxiosError) => {
           this.logger.error(
-            `Fallo al obtener perfil del entrenador ${entrenadorId}`,
+            `Fallo al obtener perfil del entrenador ${entrenadorId} desde ms-identidad`,
             error.response?.data,
           );
           throw new InternalServerErrorException(
-            'Error de comunicación con el servicio de identidad.',
+            'Error de comunicación al verificar perfil de entrenador.',
           );
         }),
       );
     const perfilEntrenador = await firstValueFrom(perfilEntrenador$);
 
-    const gymId = perfilEntrenador.gymId;
+    const gymId = perfilEntrenador.gimnasio?.id;
     if (!gymId) {
       this.logger.warn(
-        `El entrenador ${entrenadorId} no pertenece a ningún gimnasio.`,
+        `El entrenador ${entrenadorId} no está asociado a ningún gimnasio.`,
       );
-      return false;
+      return false; // Si el entrenador no tiene gimnasio, no puede tener alumnos.
     }
 
+    // 2. Obtener la lista de miembros de ese gimnasio.
     const urlMiembros = `${this.identidadServiceUrl}/v1/gyms/${gymId}/members`;
     const miembros$ = this.httpService
       .get<MiembroGimnasioResponse[]>(urlMiembros)
@@ -77,27 +94,21 @@ export class IdentidadService {
         ),
         catchError((error: AxiosError) => {
           this.logger.error(
-            `Fallo al obtener miembros del gimnasio ${gymId}`,
+            `Fallo al obtener miembros del gimnasio ${gymId} desde ms-identidad`,
             error.response?.data,
           );
           throw new InternalServerErrorException(
-            'Error de comunicación con el servicio de identidad.',
+            'Error de comunicación al verificar miembros del gimnasio.',
           );
         }),
       );
     const miembros = await firstValueFrom(miembros$);
 
+    // 3. Verificar si el atletaId está en la lista de miembros.
     const esMiembro = miembros.some((miembro) => miembro.id === atletaId);
     return esMiembro;
   }
 
-  /**
-   * Verifica si una lista de atletas pertenece al mismo gimnasio que un entrenador.
-   *
-   * @param entrenadorId El ID del entrenador.
-   * @param atletaIds Un arreglo de IDs de atletas a verificar.
-   * @returns `true` si TODOS los atletas pertenecen al gimnasio del entrenador, `false` en caso contrario.
-   */
   public async verificarPertenenciaDeAtletas(
     entrenadorId: string,
     atletaIds: string[],
@@ -119,7 +130,7 @@ export class IdentidadService {
       );
     const perfilEntrenador = await firstValueFrom(perfilEntrenador$);
 
-    const gymId = perfilEntrenador.gymId;
+    const gymId = perfilEntrenador.gimnasio?.id;
     if (!gymId) {
       this.logger.warn(
         `El entrenador ${entrenadorId} no pertenece a ningún gimnasio.`,
@@ -144,11 +155,7 @@ export class IdentidadService {
       );
     const miembros = await firstValueFrom(miembros$);
 
-    // Convertimos la lista de miembros en un Set para búsquedas ultra rápidas (O(1))
     const setDeMiembros = new Set(miembros.map((miembro) => miembro.id));
-
-    // Usamos el método 'every' para asegurar que CADA atleta en la lista de entrada
-    // exista en nuestro Set de miembros del gimnasio.
     return atletaIds.every((atletaId) => setDeMiembros.has(atletaId));
   }
 }

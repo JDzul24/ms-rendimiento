@@ -20,6 +20,7 @@ import { RegistrarEventoCombateService } from './aplicacion/servicios/registrar-
 import { ConsultarHistorialCombatesService } from './aplicacion/servicios/consultar-historial-combates.service';
 import { RegistrarAsistenciaService } from './aplicacion/servicios/registrar-asistencia.service';
 import { IdentidadService } from './aplicacion/servicios/identidad.service';
+import { PlanificacionService } from './aplicacion/servicios/planificacion.service';
 
 // --- Guardias y Estrategias ---
 import { JwtAuthGuard } from './infraestructura/guardias/jwt-auth.guard';
@@ -65,6 +66,7 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
     ConsultarHistorialCombatesService,
     RegistrarAsistenciaService,
     IdentidadService,
+    PlanificacionService,
 
     // Guardias y Estrategias
     JwtAuthGuard,
