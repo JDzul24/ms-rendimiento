@@ -32,7 +32,6 @@ export class RegistrarSesionService {
 
       return { id: sesionGuardada.id };
     } catch (error) {
-      // --- CORRECCIÓN DE ESLINT ---
       // Aseguramos que el mensaje del error sea un string antes de pasarlo.
       const errorMessage =
         error instanceof Error ? error.message : String(error);

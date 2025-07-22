@@ -7,16 +7,39 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  UseGuards,
+  Get,
+  Req,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  ForbiddenException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { RegistrarSesionDto } from '../dtos/registrar-sesion.dto';
 import { RegistrarSesionService } from '../../aplicacion/servicios/registrar-sesion.service';
+import { ConsultarHistorialSesionesService } from '../../aplicacion/servicios/consultar-historial-sesiones.service';
+import { ConsultarHistorialAtletaService } from '../../aplicacion/servicios/consultar-historial-atleta.service';
+import { JwtAuthGuard } from '../guardias/jwt-auth.guard';
+
+interface RequestConUsuario extends Request {
+  user: {
+    userId: string;
+    email: string;
+    rol: string;
+  };
+}
 
 @Controller('sessions')
+@UseGuards(JwtAuthGuard)
 export class SesionesController {
   constructor(
-    // El tipo se infiere correctamente por el sistema de inyección de NestJS
     @Inject(RegistrarSesionService)
     private readonly registrarSesionService: RegistrarSesionService,
+    @Inject(ConsultarHistorialSesionesService)
+    private readonly consultarHistorialSesionesService: ConsultarHistorialSesionesService,
+    @Inject(ConsultarHistorialAtletaService)
+    private readonly consultarHistorialAtletaService: ConsultarHistorialAtletaService,
   ) {}
 
   @Post()
@@ -27,30 +50,85 @@ export class SesionesController {
       forbidNonWhitelisted: true,
     }),
   )
+  @HttpCode(HttpStatus.CREATED)
   async registrarSesion(@Body() registrarSesionDto: RegistrarSesionDto) {
     try {
+      // En una implementación final, el atletaId se extraería del token.
+      // registrarSesionDto.atletaId = req.user.userId;
       const resultado =
         await this.registrarSesionService.ejecutar(registrarSesionDto);
-
       return {
         statusCode: HttpStatus.CREATED,
         message: 'Sesión de entrenamiento registrada con éxito.',
         data: resultado,
       };
     } catch (error) {
-      // --- CORRECCIÓN DE ESLINT ---
-      // Verificamos si el error es una instancia de HttpException para usar su estado,
-      // de lo contrario, asumimos un error interno del servidor.
       const status =
         error instanceof HttpException
           ? error.getStatus()
           : HttpStatus.INTERNAL_SERVER_ERROR;
-
       const message =
         error instanceof Error
           ? error.message
           : 'Ocurrió un error inesperado al registrar la sesión.';
+      throw new HttpException({ statusCode: status, message }, status);
+    }
+  }
 
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  async obtenerMiHistorialDeSesiones(@Req() req: RequestConUsuario) {
+    try {
+      const atletaId = req.user.userId;
+      return await this.consultarHistorialSesionesService.ejecutar(atletaId);
+    } catch (error) {
+      const status =
+        error instanceof HttpException
+          ? error.getStatus()
+          : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Ocurrió un error inesperado al consultar el historial.';
+      throw new HttpException({ statusCode: status, message }, status);
+    }
+  }
+
+  /**
+   * Endpoint protegido para que un entrenador obtenga el historial de sesiones
+   * de uno de sus atletas.
+   * GET /sessions/athlete/:atletaId
+   */
+  @Get('athlete/:atletaId')
+  @HttpCode(HttpStatus.OK)
+  async obtenerHistorialDeAtleta(
+    @Req() req: RequestConUsuario,
+    @Param('atletaId', ParseUUIDPipe) atletaId: string,
+  ) {
+    try {
+      const { userId: solicitanteId, rol } = req.user;
+
+      // 1. Autorización a nivel de Rol: Solo los entrenadores pueden acceder.
+      if (rol !== 'Entrenador') {
+        throw new ForbiddenException(
+          'No tienes los permisos necesarios para realizar esta acción.',
+        );
+      }
+
+      // 2. Delegar la lógica y la autorización de negocio al servicio.
+      return await this.consultarHistorialAtletaService.ejecutar(
+        solicitanteId,
+        atletaId,
+      );
+    } catch (error) {
+      const status =
+        error instanceof HttpException
+          ? error.getStatus()
+          : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Ocurrió un error inesperado al consultar el historial del atleta.';
       throw new HttpException({ statusCode: status, message }, status);
     }
   }

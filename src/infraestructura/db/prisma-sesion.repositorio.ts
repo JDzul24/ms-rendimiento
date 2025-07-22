@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { TrainingSession, PerformanceMetric } from '@prisma/client';
+
 import { ISesionRepositorio } from '../../dominio/repositorios/sesion.repositorio';
 import { SesionEntrenamiento } from '../../dominio/entidades/sesion-entrenamiento.entity';
 import { MetricaRendimiento } from '../../dominio/entidades/metrica-rendimiento.value-object';
-// Importamos los tipos generados por Prisma para usarlos explícitamente
-import { TrainingSession, PerformanceMetric } from '@prisma/client';
 
 @Injectable()
 export class PrismaSesionRepositorio implements ISesionRepositorio {
   constructor(private readonly prisma: PrismaService) {}
 
-  async guardar(sesion: SesionEntrenamiento): Promise<SesionEntrenamiento> {
-    // El tipo de 'sesionGuardadaEnDb' se infiere correctamente como
-    // TrainingSession & { metrics: PerformanceMetric[] } gracias al 'include'.
-    const sesionGuardadaEnDb = await this.prisma.trainingSession.create({
+  public async guardar(
+    sesion: SesionEntrenamiento,
+  ): Promise<SesionEntrenamiento> {
+    const sesionGuardada = await this.prisma.trainingSession.create({
       data: {
         id: sesion.id,
         athleteId: sesion.atletaId,
@@ -32,19 +32,36 @@ export class PrismaSesionRepositorio implements ISesionRepositorio {
         },
       },
       include: {
-        metrics: true, // Incluimos las métricas en la respuesta de la BD
+        metrics: true,
       },
     });
 
-    // Mapeamos el objeto de la base de datos de vuelta a nuestra entidad de dominio
-    return this.mapearADominio(sesionGuardadaEnDb);
+    return this.mapearADominio(sesionGuardada);
   }
 
   /**
-   * Método privado y tipado para mapear de la persistencia al dominio.
-   * Mejora la legibilidad y centraliza la lógica de mapeo.
-   * @param persistencia Objeto recuperado de la base de datos.
-   * @returns Una instancia de la entidad de dominio SesionEntrenamiento.
+   * Implementación del método para encontrar todas las sesiones de un atleta.
+   */
+  public async encontrarPorAtletaId(
+    atletaId: string,
+  ): Promise<SesionEntrenamiento[]> {
+    const sesionesDb = await this.prisma.trainingSession.findMany({
+      where: {
+        athleteId: atletaId,
+      },
+      orderBy: {
+        startTime: 'desc', // Ordenar por fecha de inicio, las más recientes primero
+      },
+      include: {
+        metrics: true, // Incluir métricas por si se necesita en el futuro
+      },
+    });
+
+    return sesionesDb.map((sesionDb) => this.mapearADominio(sesionDb));
+  }
+
+  /**
+   * Mapea un objeto de la base de datos (Prisma) a una entidad de dominio.
    */
   private mapearADominio(
     persistencia: TrainingSession & { metrics: PerformanceMetric[] },
