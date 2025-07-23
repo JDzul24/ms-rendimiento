@@ -14,7 +14,6 @@ import {
   Param,
   ParseUUIDPipe,
   ForbiddenException,
-  forwardRef, // Se importa forwardRef para resolver dependencias circulares
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RegistrarSesionDto } from '../dtos/registrar-sesion.dto';
@@ -37,8 +36,8 @@ export class SesionesController {
   constructor(
     @Inject(RegistrarSesionService)
     private readonly registrarSesionService: RegistrarSesionService,
-    // Se utiliza forwardRef para la inyección del servicio
-    @Inject(forwardRef(() => ConsultarHistorialSesionesService))
+
+    @Inject(ConsultarHistorialSesionesService)
     private readonly consultarHistorialSesionesService: ConsultarHistorialSesionesService,
     @Inject(ConsultarHistorialAtletaService)
     private readonly consultarHistorialAtletaService: ConsultarHistorialAtletaService,
