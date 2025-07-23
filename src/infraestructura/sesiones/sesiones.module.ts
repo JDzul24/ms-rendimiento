@@ -5,6 +5,8 @@ import { ConsultarHistorialSesionesService } from '../../aplicacion/servicios/co
 import { ConsultarHistorialAtletaService } from '../../aplicacion/servicios/consultar-historial-atleta.service';
 import { PrismaSesionRepositorio } from '../db/prisma-sesion.repositorio';
 import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.module';
+import { PlanificacionService } from '../../aplicacion/servicios/planificacion.service';
+import { IdentidadService } from '../../aplicacion/servicios/identidad.service';
 
 @Module({
   imports: [ComunicacionModule],
@@ -13,16 +15,12 @@ import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.m
     RegistrarSesionService,
     ConsultarHistorialSesionesService,
     ConsultarHistorialAtletaService,
+    PlanificacionService, // Añadido para asegurar la visibilidad
+    IdentidadService, // Añadido para asegurar la visibilidad
     {
       provide: 'ISesionRepositorio',
       useClass: PrismaSesionRepositorio,
     },
-  ],
-  // --- CORRECCIÓN DEFINITIVA AQUÍ ---
-  exports: [
-    RegistrarSesionService,
-    ConsultarHistorialSesionesService,
-    ConsultarHistorialAtletaService,
   ],
 })
 export class SesionesModule {}
