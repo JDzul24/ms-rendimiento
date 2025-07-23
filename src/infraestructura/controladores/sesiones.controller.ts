@@ -14,6 +14,7 @@ import {
   Param,
   ParseUUIDPipe,
   ForbiddenException,
+  forwardRef,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RegistrarSesionDto } from '../dtos/registrar-sesion.dto';
@@ -37,7 +38,7 @@ export class SesionesController {
     @Inject(RegistrarSesionService)
     private readonly registrarSesionService: RegistrarSesionService,
 
-    @Inject(ConsultarHistorialSesionesService)
+    @Inject(forwardRef(() => ConsultarHistorialSesionesService))
     private readonly consultarHistorialSesionesService: ConsultarHistorialSesionesService,
     @Inject(ConsultarHistorialAtletaService)
     private readonly consultarHistorialAtletaService: ConsultarHistorialAtletaService,
