@@ -7,10 +7,11 @@ import { PrismaSesionRepositorio } from '../db/prisma-sesion.repositorio';
 import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.module';
 
 @Module({
-  imports: [ComunicacionModule],
+  imports: [
+    ComunicacionModule, // Importa el módulo que provee IdentidadService y PlanificacionService
+  ],
   controllers: [SesionesController],
   providers: [
-    // --- CORRECCIÓN AQUÍ: Se declaran todos los servicios que usa el controlador ---
     RegistrarSesionService,
     ConsultarHistorialSesionesService,
     ConsultarHistorialAtletaService,
