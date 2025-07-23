@@ -7,9 +7,7 @@ import { PrismaSesionRepositorio } from '../db/prisma-sesion.repositorio';
 import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.module';
 
 @Module({
-  imports: [
-    ComunicacionModule, // Importa el módulo que provee IdentidadService y PlanificacionService
-  ],
+  imports: [ComunicacionModule],
   controllers: [SesionesController],
   providers: [
     RegistrarSesionService,
@@ -19,6 +17,12 @@ import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.m
       provide: 'ISesionRepositorio',
       useClass: PrismaSesionRepositorio,
     },
+  ],
+  // --- CORRECCIÓN DEFINITIVA AQUÍ ---
+  exports: [
+    RegistrarSesionService,
+    ConsultarHistorialSesionesService,
+    ConsultarHistorialAtletaService,
   ],
 })
 export class SesionesModule {}

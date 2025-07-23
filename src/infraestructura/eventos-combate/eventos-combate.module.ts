@@ -6,12 +6,8 @@ import { PrismaEventoCombateRepositorio } from '../db/prisma-evento-combate.repo
 import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.module';
 
 @Module({
-  // Se importa ComunicacionModule para que los servicios de este módulo
-  // puedan inyectar el IdentidadService para las validaciones de autorización.
   imports: [ComunicacionModule],
-  // Se declara el controlador específico de esta funcionalidad.
   controllers: [EventosCombateController],
-  // Se declaran los proveedores específicos de esta funcionalidad.
   providers: [
     RegistrarEventoCombateService,
     ConsultarHistorialCombatesService,
@@ -20,5 +16,7 @@ import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.m
       useClass: PrismaEventoCombateRepositorio,
     },
   ],
+  // --- AÑADIR EXPORTS ---
+  exports: [RegistrarEventoCombateService, ConsultarHistorialCombatesService],
 })
 export class EventosCombateModule {}

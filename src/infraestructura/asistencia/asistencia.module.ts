@@ -5,12 +5,8 @@ import { PrismaAsistenciaRepositorio } from '../db/prisma-asistencia.repositorio
 import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.module';
 
 @Module({
-  // Se importa ComunicacionModule para que el RegistrarAsistenciaService
-  // pueda inyectar el IdentidadService.
   imports: [ComunicacionModule],
-  // Se declara el controlador específico de esta funcionalidad.
   controllers: [AsistenciaController],
-  // Se declaran los proveedores específicos de esta funcionalidad.
   providers: [
     RegistrarAsistenciaService,
     {
@@ -18,5 +14,7 @@ import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.m
       useClass: PrismaAsistenciaRepositorio,
     },
   ],
+  // --- AÑADIR EXPORTS ---
+  exports: [RegistrarAsistenciaService],
 })
 export class AsistenciaModule {}
