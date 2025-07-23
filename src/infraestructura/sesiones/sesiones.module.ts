@@ -22,5 +22,10 @@ import { IdentidadService } from '../../aplicacion/servicios/identidad.service';
       useClass: PrismaSesionRepositorio,
     },
   ],
+  exports: [
+    RegistrarSesionService,
+    ConsultarHistorialSesionesService,
+    ConsultarHistorialAtletaService,
+  ],
 })
 export class SesionesModule {}
