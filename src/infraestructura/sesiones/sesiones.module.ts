@@ -1,0 +1,26 @@
+import { Module } from '@nestjs/common';
+import { SesionesController } from '../controladores/sesiones.controller';
+import { RegistrarSesionService } from '../../aplicacion/servicios/registrar-sesion.service';
+import { ConsultarHistorialSesionesService } from '../../aplicacion/servicios/consultar-historial-sesiones.service';
+import { ConsultarHistorialAtletaService } from '../../aplicacion/servicios/consultar-historial-atleta.service';
+import { PrismaSesionRepositorio } from '../db/prisma-sesion.repositorio';
+import { ComunicacionModule } from '../../aplicacion/comunicacion/comunicacion.module';
+
+@Module({
+  // Se importa ComunicacionModule para que los servicios de este módulo
+  // puedan inyectar los clientes HTTP (IdentidadService, PlanificacionService).
+  imports: [ComunicacionModule],
+  // Se declara el controlador específico de esta funcionalidad.
+  controllers: [SesionesController],
+  // Se declaran los proveedores específicos de esta funcionalidad.
+  providers: [
+    RegistrarSesionService,
+    ConsultarHistorialSesionesService,
+    ConsultarHistorialAtletaService,
+    {
+      provide: 'ISesionRepositorio',
+      useClass: PrismaSesionRepositorio,
+    },
+  ],
+})
+export class SesionesModule {}
