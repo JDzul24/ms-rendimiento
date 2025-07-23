@@ -14,6 +14,7 @@ import {
   Param,
   ParseUUIDPipe,
   ForbiddenException,
+  forwardRef, // Se importa forwardRef para resolver dependencias circulares
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RegistrarSesionDto } from '../dtos/registrar-sesion.dto';
@@ -36,7 +37,8 @@ export class SesionesController {
   constructor(
     @Inject(RegistrarSesionService)
     private readonly registrarSesionService: RegistrarSesionService,
-    @Inject(ConsultarHistorialSesionesService)
+    // Se utiliza forwardRef para la inyección del servicio
+    @Inject(forwardRef(() => ConsultarHistorialSesionesService))
     private readonly consultarHistorialSesionesService: ConsultarHistorialSesionesService,
     @Inject(ConsultarHistorialAtletaService)
     private readonly consultarHistorialAtletaService: ConsultarHistorialAtletaService,
@@ -53,8 +55,6 @@ export class SesionesController {
   @HttpCode(HttpStatus.CREATED)
   async registrarSesion(@Body() registrarSesionDto: RegistrarSesionDto) {
     try {
-      // En una implementación final, el atletaId se extraería del token.
-      // registrarSesionDto.atletaId = req.user.userId;
       const resultado =
         await this.registrarSesionService.ejecutar(registrarSesionDto);
       return {
@@ -94,11 +94,6 @@ export class SesionesController {
     }
   }
 
-  /**
-   * Endpoint protegido para que un entrenador obtenga el historial de sesiones
-   * de uno de sus atletas.
-   * GET /sessions/athlete/:atletaId
-   */
   @Get('athlete/:atletaId')
   @HttpCode(HttpStatus.OK)
   async obtenerHistorialDeAtleta(
@@ -108,14 +103,12 @@ export class SesionesController {
     try {
       const { userId: solicitanteId, rol } = req.user;
 
-      // 1. Autorización a nivel de Rol: Solo los entrenadores pueden acceder.
       if (rol !== 'Entrenador') {
         throw new ForbiddenException(
           'No tienes los permisos necesarios para realizar esta acción.',
         );
       }
 
-      // 2. Delegar la lógica y la autorización de negocio al servicio.
       return await this.consultarHistorialAtletaService.ejecutar(
         solicitanteId,
         atletaId,
