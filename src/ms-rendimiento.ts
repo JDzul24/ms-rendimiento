@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { HttpModule } from '@nestjs/axios';
 
 // --- Módulos de Funcionalidad ---
 import { SesionesModule } from './infraestructura/sesiones/sesiones.module';
@@ -13,13 +14,12 @@ import { AsistenciaModule } from './infraestructura/asistencia/asistencia.module
 import { PrismaService } from './infraestructura/db/prisma.service';
 import { JwtAuthGuard } from './infraestructura/guardias/jwt-auth.guard';
 import { JwtStrategy } from './infraestructura/estrategias/jwt.strategy';
-import { ComunicacionModule } from './aplicacion/comunicacion/comunicacion.module';
 
 @Module({
   imports: [
-    // Módulos de configuración base
     ConfigModule.forRoot({ isGlobal: true }),
     PassportModule,
+    HttpModule, // Importante para el ComunicacionModule
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -30,18 +30,17 @@ import { ComunicacionModule } from './aplicacion/comunicacion/comunicacion.modul
         },
       }),
     }),
-
-    // --- Módulos de Funcionalidad ---
-    ComunicacionModule, // Importamos el módulo de comunicación para que esté disponible
+    // --- Ensamblaje de Módulos ---
     SesionesModule,
     PruebasModule,
     EventosCombateModule,
     AsistenciaModule,
   ],
-  // Los controladores se declaran en sus respectivos módulos de funcionalidad,
-  // por lo que este arreglo ahora está vacío.
-  controllers: [],
-  // Se proveen los servicios que son transversales a toda la aplicación.
-  providers: [PrismaService, JwtStrategy, JwtAuthGuard],
+  providers: [
+    // Solo los servicios que son verdaderamente globales y transversales
+    PrismaService,
+    JwtStrategy,
+    JwtAuthGuard,
+  ],
 })
 export class MsRendimientoModule {}
