@@ -2,8 +2,19 @@
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
-  "entryFile": "ms-rendimiento",
   "compilerOptions": {
     "deleteOutDir": true
+  },
+
+  "projects": {
+    "ms-planificacion": {
+      "type": "application",
+      "root": "apps/ms-rendimiento",
+      "entryFile": "main",
+      "sourceRoot": "apps/ms-rendimiento/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ms-rendimiento/tsconfig.app.json"
+      }
+    }
   }
 }
