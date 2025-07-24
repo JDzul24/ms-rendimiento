@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { MsRendimientoModule } from './ms-rendimiento';
+import { MsRendimientoModule } from '../src/ms-rendimiento';
 
 /**
  * Función de arranque (bootstrap) para el microservicio de Planificación.

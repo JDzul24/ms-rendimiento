@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { HttpModule } from '@nestjs/axios';
 
-// --- Módulo de Comunicación ---
-import { ComunicacionModule } from './aplicacion/comunicacion/comunicacion.module';
-
-// --- Componentes ---
+// Controladores
 import { SesionesController } from './infraestructura/controladores/sesiones.controller';
 import { PruebasController } from './infraestructura/controladores/pruebas.controller';
 import { EventosCombateController } from './infraestructura/controladores/eventos-combate.controller';
 import { AsistenciaController } from './infraestructura/controladores/asistencia.controller';
+
+// Servicios de Aplicación
 import { RegistrarSesionService } from './aplicacion/servicios/registrar-sesion.service';
 import { ConsultarHistorialSesionesService } from './aplicacion/servicios/consultar-historial-sesiones.service';
 import { ConsultarHistorialAtletaService } from './aplicacion/servicios/consultar-historial-atleta.service';
@@ -19,8 +19,14 @@ import { ConsultarHistorialPruebasService } from './aplicacion/servicios/consult
 import { RegistrarEventoCombateService } from './aplicacion/servicios/registrar-evento-combate.service';
 import { ConsultarHistorialCombatesService } from './aplicacion/servicios/consultar-historial-combates.service';
 import { RegistrarAsistenciaService } from './aplicacion/servicios/registrar-asistencia.service';
+import { IdentidadService } from './aplicacion/servicios/identidad.service';
+import { PlanificacionService } from './aplicacion/servicios/planificacion.service';
+
+// Guardias y Estrategias
 import { JwtAuthGuard } from './infraestructura/guardias/jwt-auth.guard';
 import { JwtStrategy } from './infraestructura/estrategias/jwt.strategy';
+
+// Infraestructura de Base de Datos
 import { PrismaService } from './infraestructura/db/prisma.service';
 import { PrismaSesionRepositorio } from './infraestructura/db/prisma-sesion.repositorio';
 import { PrismaPruebaRepositorio } from './infraestructura/db/prisma-prueba.repositorio';
@@ -31,6 +37,7 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PassportModule,
+    HttpModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -41,8 +48,6 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
         },
       }),
     }),
-    // --- CORRECCIÓN DEFINITIVA ---
-    ComunicacionModule, // Se importa el módulo que encapsula HttpModule y los servicios cliente
   ],
   controllers: [
     SesionesController,
@@ -51,7 +56,7 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
     AsistenciaController,
   ],
   providers: [
-    // Servicios de Aplicación (los servicios cliente ahora vienen del ComunicacionModule)
+    // Servicios de Aplicación
     RegistrarSesionService,
     ConsultarHistorialSesionesService,
     ConsultarHistorialAtletaService,
@@ -60,6 +65,8 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
     RegistrarEventoCombateService,
     ConsultarHistorialCombatesService,
     RegistrarAsistenciaService,
+    IdentidadService,
+    PlanificacionService,
 
     // Guardias y Estrategias
     JwtAuthGuard,
@@ -67,8 +74,14 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
 
     // Infraestructura de Base de Datos
     PrismaService,
-    { provide: 'ISesionRepositorio', useClass: PrismaSesionRepositorio },
-    { provide: 'IPruebaRepositorio', useClass: PrismaPruebaRepositorio },
+    {
+      provide: 'ISesionRepositorio',
+      useClass: PrismaSesionRepositorio,
+    },
+    {
+      provide: 'IPruebaRepositorio',
+      useClass: PrismaPruebaRepositorio,
+    },
     {
       provide: 'IEventoCombateRepositorio',
       useClass: PrismaEventoCombateRepositorio,
