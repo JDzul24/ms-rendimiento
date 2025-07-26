@@ -3,9 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
-// Define la estructura esperada del payload decodificado del JWT.
 interface JwtPayload {
-  sub: string; // ID del usuario
+  sub: string;
   email: string;
   rol: string;
 }
@@ -13,33 +12,33 @@ interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
+    // --- CORRECCIÓN DE TIPADO ESTRICTO ---
     const jwtSecret = configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
+      // Lanzamos un error explícito si el secreto no está definido.
+      // Esto detiene el arranque de la aplicación y deja un log claro del problema.
       throw new Error(
-        'El secreto JWT no está definido. Asegúrate de que JWT_SECRET esté en tu archivo .env',
+        'El secreto JWT (JWT_SECRET) no está definido en las variables de entorno.',
       );
     }
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtSecret,
+      secretOrKey: jwtSecret, // Ahora estamos 100% seguros de que es un 'string'.
     });
   }
 
-  /**
-   * Método de validación que Passport invoca después de una verificación exitosa del token.
-   * @param payload El payload decodificado y verificado del token.
-   * @returns Un objeto simplificado que se adjuntará a `request.user`.
-   */
+  // El método validate puede ser síncrono si no hace llamadas asíncronas
   validate(payload: JwtPayload): {
     userId: string;
     email: string;
     rol: string;
   } {
-    // Verificación adicional para asegurar que el payload contenga los campos requeridos.
     if (!payload.sub || !payload.email || !payload.rol) {
-      throw new UnauthorizedException('Token inválido o malformado.');
+      throw new UnauthorizedException(
+        'Token de autenticación inválido o malformado.',
+      );
     }
 
     return {
