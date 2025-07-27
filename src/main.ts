@@ -3,11 +3,25 @@ import { ValidationPipe } from '@nestjs/common';
 import { MsRendimientoModule } from './ms-rendimiento';
 
 /**
- * Función de arranque (bootstrap) para el microservicio de Planificación.
- * Este es el punto de entrada de la aplicación.
+ * Función de arranque (bootstrap) para el microservicio de Rendimiento.
  */
 async function bootstrap() {
   const app = await NestFactory.create(MsRendimientoModule);
+
+  // --- CORRECCIÓN 1: Habilitar CORS explícitamente ---
+  // Se configura la política de CORS para permitir peticiones desde el entorno
+  // de desarrollo local de Flutter y cualquier otro origen.
+  app.enableCors({
+    origin: '*', // Permite cualquier origen para máxima flexibilidad en desarrollo.
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type,Authorization,Accept',
+  });
+
+  // --- CORRECCIÓN 2: Establecer el Prefijo Global de la API ---
+  // Todas las rutas definidas en los controladores ahora tendrán el prefijo '/v1'.
+  // Ejemplo: @Controller('sessions') -> /v1/sessions
+  app.setGlobalPrefix('/v1');
 
   app.useGlobalPipes(
     new ValidationPipe({
