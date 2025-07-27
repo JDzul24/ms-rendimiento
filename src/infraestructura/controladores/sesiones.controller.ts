@@ -32,7 +32,6 @@ interface RequestConUsuario extends Request {
 }
 
 @Controller('sessions')
-@UseGuards(JwtAuthGuard)
 export class SesionesController {
   constructor(
     @Inject(RegistrarSesionService)
@@ -44,7 +43,28 @@ export class SesionesController {
     private readonly consultarHistorialAtletaService: ConsultarHistorialAtletaService,
   ) {}
 
+  /**
+   * Endpoint de health check para el servicio de rendimiento.
+   * GET /sessions (sin auth guard)
+   */
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  healthCheck() {
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Servicio de rendimiento disponible',
+      service: 'ms-rendimiento',
+      version: '1.3.0',
+      endpoints: {
+        createSession: 'POST /sessions',
+        myHistory: 'GET /sessions/me',
+        athleteHistory: 'GET /sessions/athlete/:id',
+      },
+    };
+  }
+
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -76,6 +96,7 @@ export class SesionesController {
   }
 
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async obtenerMiHistorialDeSesiones(@Req() req: RequestConUsuario) {
     try {
@@ -95,6 +116,7 @@ export class SesionesController {
   }
 
   @Get('athlete/:atletaId')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async obtenerHistorialDeAtleta(
     @Req() req: RequestConUsuario,
