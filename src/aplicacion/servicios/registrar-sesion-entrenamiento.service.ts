@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ISesionRepositorio } from '../../dominio/repositorios/sesion.repositorio';
-import { Sesion } from '../../dominio/entidades/sesion.entity';
+import { SesionEntrenamiento } from '../../dominio/entidades/sesion-entrenamiento.entity';
+import { MetricaRendimiento } from '../../dominio/entidades/metrica-rendimiento.value-object';
 import { RegistrarSesionEntrenamientoDto } from '../../infraestructura/dtos/registrar-sesion-entrenamiento.dto';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
@@ -28,13 +29,21 @@ export class RegistrarSesionEntrenamientoService {
     const fechaFin = new Date(dto.fechaFin);
 
     // Crear la sesión con los datos del entrenamiento
-    const sesion = Sesion.crear({
+    const sesion = SesionEntrenamiento.iniciar({
       atletaId: atletaId,
       routineAssignmentId: dto.assignmentId,
       startTime: fechaInicio,
+    });
+
+    // Finalizar la sesión con los datos del entrenamiento
+    sesion.finalizar({
       endTime: fechaFin,
       rpeScore: this.calcularRPE(dto), // Calcular RPE basado en rendimiento
-      metricas: this.convertirSeccionesAMetricas(dto.secciones),
+      metricas: this.convertirSeccionesAMetricas(dto.secciones).map(m => ({
+        tipo: m.tipo,
+        valor: m.valor,
+        unidad: m.unidad
+      })),
     });
 
     // Guardar la sesión
@@ -74,35 +83,35 @@ export class RegistrarSesionEntrenamientoService {
     }
   }
 
-  private convertirSeccionesAMetricas(secciones: any[]): any[] {
+  private convertirSeccionesAMetricas(secciones: any[]): MetricaRendimiento[] {
     const metricas = [];
 
     for (const seccion of secciones) {
       metricas.push(
-        {
+        MetricaRendimiento.crear({
           tipo: `tiempo_${seccion.categoria}`,
           valor: seccion.tiempoUsadoSegundos.toString(),
           unidad: 'segundos',
-        },
-        {
+        }),
+        MetricaRendimiento.crear({
           tipo: `ejercicios_${seccion.categoria}`,
           valor: seccion.ejerciciosCompletados.toString(),
           unidad: 'ejercicios',
-        },
-        {
+        }),
+        MetricaRendimiento.crear({
           tipo: `eficiencia_${seccion.categoria}`,
           valor: (seccion.tiempoUsadoSegundos / seccion.tiempoObjetivoSegundos).toFixed(2),
           unidad: 'ratio',
-        }
+        })
       );
     }
 
     // Agregar métricas generales
-    metricas.push({
+    metricas.push(MetricaRendimiento.crear({
       tipo: 'total_secciones',
       valor: secciones.length.toString(),
       unidad: 'secciones',
-    });
+    }));
 
     return metricas;
   }
