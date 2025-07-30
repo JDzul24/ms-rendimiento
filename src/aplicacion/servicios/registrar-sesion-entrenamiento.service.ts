@@ -84,7 +84,7 @@ export class RegistrarSesionEntrenamientoService {
   }
 
   private convertirSeccionesAMetricas(secciones: any[]): MetricaRendimiento[] {
-    const metricas: MetricaRendimiento[] = [];
+    const metricas = [];
 
     for (const seccion of secciones) {
       metricas.push(
