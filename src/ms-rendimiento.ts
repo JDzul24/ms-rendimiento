@@ -12,6 +12,7 @@ import { AsistenciaController } from './infraestructura/controladores/asistencia
 
 // Servicios de Aplicación
 import { RegistrarSesionService } from './aplicacion/servicios/registrar-sesion.service';
+import { RegistrarSesionEntrenamientoService } from './aplicacion/servicios/registrar-sesion-entrenamiento.service';
 import { ConsultarHistorialSesionesService } from './aplicacion/servicios/consultar-historial-sesiones.service';
 import { ConsultarHistorialAtletaService } from './aplicacion/servicios/consultar-historial-atleta.service';
 import { RegistrarPruebasService } from './aplicacion/servicios/registrar-pruebas.service';
@@ -58,6 +59,7 @@ import { PrismaAsistenciaRepositorio } from './infraestructura/db/prisma-asisten
   providers: [
     // Servicios de Aplicación
     RegistrarSesionService,
+    RegistrarSesionEntrenamientoService,
     ConsultarHistorialSesionesService,
     ConsultarHistorialAtletaService,
     RegistrarPruebasService,

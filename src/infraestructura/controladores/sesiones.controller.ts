@@ -18,7 +18,9 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RegistrarSesionDto } from '../dtos/registrar-sesion.dto';
+import { RegistrarSesionEntrenamientoDto } from '../dtos/registrar-sesion-entrenamiento.dto';
 import { RegistrarSesionService } from '../../aplicacion/servicios/registrar-sesion.service';
+import { RegistrarSesionEntrenamientoService } from '../../aplicacion/servicios/registrar-sesion-entrenamiento.service';
 import { ConsultarHistorialSesionesService } from '../../aplicacion/servicios/consultar-historial-sesiones.service';
 import { ConsultarHistorialAtletaService } from '../../aplicacion/servicios/consultar-historial-atleta.service';
 import { JwtAuthGuard } from '../guardias/jwt-auth.guard';
@@ -36,6 +38,9 @@ export class SesionesController {
   constructor(
     @Inject(RegistrarSesionService)
     private readonly registrarSesionService: RegistrarSesionService,
+
+    @Inject(RegistrarSesionEntrenamientoService)
+    private readonly registrarSesionEntrenamientoService: RegistrarSesionEntrenamientoService,
 
     @Inject(forwardRef(() => ConsultarHistorialSesionesService))
     private readonly consultarHistorialSesionesService: ConsultarHistorialSesionesService,
@@ -91,6 +96,56 @@ export class SesionesController {
         error instanceof Error
           ? error.message
           : 'Ocurrió un error inesperado al registrar la sesión.';
+      throw new HttpException({ statusCode: status, message }, status);
+    }
+  }
+
+  /**
+   * Endpoint específico para registrar sesiones de entrenamiento con estructura detallada
+   * POST /sessions/training
+   */
+  @Post('training')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  @HttpCode(HttpStatus.CREATED)
+  async registrarSesionEntrenamiento(
+    @Body() dto: RegistrarSesionEntrenamientoDto,
+    @Req() req: RequestConUsuario,
+  ) {
+    try {
+      const atletaId = req.user.userId;
+      
+      // Solo los atletas pueden registrar sus propias sesiones de entrenamiento
+      if (req.user.rol !== 'Atleta') {
+        throw new ForbiddenException(
+          'Solo los atletas pueden registrar sesiones de entrenamiento.',
+        );
+      }
+
+      const resultado = await this.registrarSesionEntrenamientoService.ejecutar(
+        dto,
+        atletaId,
+      );
+      
+      return {
+        statusCode: HttpStatus.CREATED,
+        ...resultado,
+      };
+    } catch (error) {
+      const status =
+        error instanceof HttpException
+          ? error.getStatus()
+          : HttpStatus.INTERNAL_SERVER_ERROR;
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Ocurrió un error inesperado al registrar la sesión de entrenamiento.';
       throw new HttpException({ statusCode: status, message }, status);
     }
   }
